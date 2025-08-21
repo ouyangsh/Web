@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSON Editor</title>
+    <link href="./jsoneditor.min.css" rel="stylesheet" type="text/css">
+    <style>
+        body, html {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            font-family: sans-serif;
+            display: flex;
+            flex-direction: column;
+        }
+        #controls {
+            padding: 10px;
+            text-align: right;
+            border-bottom: 1px solid #ccc;
+        }
+        #saveButton {
+            padding: 5px 15px;
+            border: 1px solid #007bff;
+            background-color: #007bff;
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        #saveButton:hover {
+            background-color: #0056b3;
+        }
+        #jsoneditor {
+            flex-grow: 1;
+        }
+    </style>
+</head>
+<body>
+    <div id="controls">
+        <button id="saveButton">Save Data</button>
+    </div>
+    <div id="jsoneditor"></div>
+
+    <script src="./jsoneditor.min.js"></script>
+    <script>
+        const container = document.getElementById('jsoneditor');
+        const options = {
+            mode: 'code',
+            modes: ['code', 'form', 'text', 'tree', 'view', 'preview'],
+            onError: function (err) {
+                alert(err.toString());
+            }
+        };
+
+        const editor = new JSONEditor(container, options);
+
+        const saveButton = document.getElementById('saveButton');
+        const apiUrl = 'https://laile.wusihan.xyz/api/CrudDemoModelViewSet/改了名字/';
+
+        // Function to load data from API
+        const loadData = () => {
+            fetch(apiUrl)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data && data.data && data.data.data) {
+                        editor.set({
+                            data:data.data.data,
+                            unique_id:data.data.unique_id
+                        });
+                    } else {
+                        editor.set(data);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading data:', error);
+                    alert(`Failed to load data: ${error.message}`);
+                });
+        };
+
+        // Function to save data to API
+        const saveData = () => {
+            let jsonData;
+            try {
+                jsonData = editor.get();
+            } catch (error) {
+                alert(`Invalid JSON in editor: ${error.message}`);
+                return;
+            }
+
+            fetch(apiUrl, {
+                method: 'put',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(jsonData)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Save success:', data);
+                alert('Data saved successfully!');
+            })
+            .catch(error => {
+                console.error('Error saving data:', error);
+                alert(`Failed to save data: ${error.message}`);
+            });
+        };
+
+        saveButton.addEventListener('click', saveData);
+
+        // Load initial data on page load
+        loadData();
+
+    </script>
+</body>
+</html> 
